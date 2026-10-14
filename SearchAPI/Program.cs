@@ -3,6 +3,7 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using SearchAPI.Data;
 using SearchAPI.Models;
+using SearchAPI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,6 +17,8 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddDbContext<ListingsDbContext>(options =>
     options.UseInMemoryDatabase("ListingsDatabase"));
+
+builder.Services.AddScoped<ListingSearchService>();
 
 var app = builder.Build();
 
@@ -58,8 +61,10 @@ await using (var stream = File.OpenRead(jsonPath))
 
 // GET /api/listings
 // Optional filters: source, city, status, q
+
 app.MapGet("/api/listings", async (
     ListingsDbContext db,
+    ListingSearchService searchService,
     string? source,
     string? city,
     string? status,
@@ -69,41 +74,16 @@ app.MapGet("/api/listings", async (
         .AsNoTracking()
         .ToListAsync();
 
-    var results = listings.AsEnumerable();
+    var results = searchService.Search(
+        listings,
+        source,
+        city,
+        status,
+        q);
 
-    if (!string.IsNullOrWhiteSpace(source))
-    {
-        results = results.Where(x =>
-            string.Equals(x.Source, source,
-                StringComparison.OrdinalIgnoreCase));
-    }
-
-    if (!string.IsNullOrWhiteSpace(city))
-    {
-        results = results.Where(x =>
-            x.City.Contains(city,
-                StringComparison.OrdinalIgnoreCase));
-    }
-
-    if (!string.IsNullOrWhiteSpace(status))
-    {
-        results = results.Where(x =>
-            string.Equals(x.Status, status,
-                StringComparison.OrdinalIgnoreCase));
-    }
-
-    if (!string.IsNullOrWhiteSpace(q))
-    {
-        results = results.Where(x =>
-            x.Address.Contains(q, StringComparison.OrdinalIgnoreCase) ||
-            x.City.Contains(q, StringComparison.OrdinalIgnoreCase) ||
-            x.State.Contains(q, StringComparison.OrdinalIgnoreCase) ||
-            x.Zip.Contains(q, StringComparison.OrdinalIgnoreCase) ||
-            x.Description.Contains(q, StringComparison.OrdinalIgnoreCase));
-    }
-
-    return Results.Ok(results.ToList());
+    return Results.Ok(results);
 });
+
 
 // GET /api/listings/{source}/{id}
 app.MapGet("/api/listings/{source}/{id}", async (
