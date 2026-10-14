@@ -1,6 +1,11 @@
-@SearchAPI_HostAddress = http://localhost:5219
+@SearchAPI_HostAddress = http://localhost:5000
 
-GET {{SearchAPI_HostAddress}}/weatherforecast/
+GET {{SearchAPI_HostAddress}}/api/listings
+Accept: application/json
+
+###
+
+GET {{SearchAPI_HostAddress}}/api/listings?minPrice=600000
 Accept: application/json
 
 ###

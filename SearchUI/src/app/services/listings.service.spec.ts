@@ -60,4 +60,38 @@ describe('ListingsService', () => {
       },
     ]);
   });
+
+  it('requests listings with minPrice query parameter when provided', () => {
+    service.getListings(500000).subscribe((listings) => {
+      expect(listings.length).toBe(1);
+      expect(listings[0].price).toBe(650000);
+    });
+
+    const request = httpTestingController.expectOne(
+      'http://localhost:5000/api/listings?minPrice=500000',
+    );
+
+    expect(request.request.method).toBe('GET');
+    expect(request.request.params.get('minPrice')).toBe('500000');
+
+    request.flush([
+      {
+        id: '1001',
+        source: 'MLS_A',
+        address: '123 Main Street',
+        city: 'Boston',
+        state: 'MA',
+        zip: '02110',
+        price: 650000,
+        bedrooms: 3,
+        bathrooms: 2.5,
+        sqft: 1800,
+        latitude: 42.357,
+        longitude: -71.058,
+        listedDate: '2026-09-15',
+        status: 'active',
+        description: 'Spacious home near downtown.',
+      },
+    ]);
+  });
 });

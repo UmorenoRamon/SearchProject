@@ -1,5 +1,5 @@
 
-import { Component, OnInit, signal, inject } from '@angular/core';
+import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { CurrencyPipe, DatePipe, DecimalPipe } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
 
@@ -19,6 +19,16 @@ export class App implements OnInit {
   protected readonly listings = signal<Listing[]>([]);
   protected readonly loading = signal(true);
   protected readonly error = signal('');
+  protected readonly minPrice = signal<number | null>(null);
+
+  protected readonly filteredListings = computed(() => {
+    const min = this.minPrice();
+    const all = this.listings();
+    if (min === null || min === undefined) {
+      return all;
+    }
+    return all.filter((listing) => listing.price >= min);
+  });
 
   ngOnInit(): void {
     this.listingsService.getListings().subscribe({
@@ -34,5 +44,19 @@ export class App implements OnInit {
         this.loading.set(false);
       },
     });
+  }
+
+  protected updateMinPrice(value: string): void {
+    const trimmed = value.trim();
+    if (trimmed === '') {
+      this.minPrice.set(null);
+      return;
+    }
+    const parsed = Number(trimmed);
+    this.minPrice.set(!isNaN(parsed) && parsed >= 0 ? parsed : null);
+  }
+
+  protected clearMinPrice(): void {
+    this.minPrice.set(null);
   }
 }

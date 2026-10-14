@@ -29,6 +29,24 @@ describe('App', () => {
     description: 'Spacious home near downtown with updated kitchen.',
   };
 
+  const sampleListing2: Listing = {
+    id: '1002',
+    source: 'MLS_B',
+    address: '45 Beacon Street',
+    city: 'Boston',
+    state: 'MA',
+    zip: '02108',
+    price: 450000,
+    bedrooms: 2,
+    bathrooms: 1.0,
+    sqft: 1100,
+    latitude: 42.356,
+    longitude: -71.065,
+    listedDate: '2026-09-20',
+    status: 'pending',
+    description: 'Historic condo.',
+  };
+
   beforeEach(async () => {
     mockListingsService = {
       getListings: vi.fn(() => of([sampleListing])),
@@ -128,4 +146,85 @@ describe('App', () => {
     expect(text).toContain('No listings');
   });
 
+  it('renders the filter by min price input', () => {
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const label = compiled.querySelector('label[for="minPrice"]');
+    const input = compiled.querySelector('#minPrice') as HTMLInputElement;
+
+    expect(label?.textContent).toContain('Filter by Min Price');
+    expect(input).toBeTruthy();
+  });
+
+  it('filters listings by min price', () => {
+    mockListingsService.getListings.mockReturnValue(
+      of([sampleListing, sampleListing2]),
+    );
+
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const input = compiled.querySelector('#minPrice') as HTMLInputElement;
+
+    expect(compiled.textContent).toContain('123 Main Street');
+    expect(compiled.textContent).toContain('45 Beacon Street');
+    expect(compiled.textContent).toContain('2 listings found');
+
+    input.value = '500000';
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    expect(compiled.textContent).toContain('123 Main Street');
+    expect(compiled.textContent).not.toContain('45 Beacon Street');
+    expect(compiled.textContent).toContain('1 listings found');
+  });
+
+  it('shows no listings when min price exceeds all listing prices', () => {
+    mockListingsService.getListings.mockReturnValue(
+      of([sampleListing, sampleListing2]),
+    );
+
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const input = compiled.querySelector('#minPrice') as HTMLInputElement;
+
+    input.value = '900000';
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    expect(compiled.textContent).toContain('0 listings found');
+    expect(compiled.textContent).toContain('No listings found.');
+  });
+
+  it('clears the min price filter when clear button is clicked', () => {
+    mockListingsService.getListings.mockReturnValue(
+      of([sampleListing, sampleListing2]),
+    );
+
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const input = compiled.querySelector('#minPrice') as HTMLInputElement;
+
+    input.value = '500000';
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    expect(compiled.textContent).toContain('1 listings found');
+
+    const clearButton = compiled.querySelector('.clear-btn') as HTMLButtonElement;
+    expect(clearButton).toBeTruthy();
+    clearButton.click();
+    fixture.detectChanges();
+
+    expect(compiled.textContent).toContain('2 listings found');
+    expect(compiled.textContent).toContain('45 Beacon Street');
+    expect(input.value).toBe('');
+  });
 });

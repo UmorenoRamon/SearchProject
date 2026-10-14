@@ -116,4 +116,23 @@ public class ListingSearchServiceTests
 
         Assert.Empty(results);
     }
+
+    [Fact]
+    public void Search_ByMinPrice_FiltersCorrectly()
+    {
+        var results = _service.Search(
+            CreateListings(), minPrice: 650000m);
+
+        Assert.Equal(2, results.Count);
+        Assert.All(results, x => Assert.True(x.Price >= 650000m));
+    }
+
+    [Fact]
+    public void Search_ByMinPrice_WhenExceedsAll_ReturnsEmpty()
+    {
+        var results = _service.Search(
+            CreateListings(), minPrice: 1000000m);
+
+        Assert.Empty(results);
+    }
 }

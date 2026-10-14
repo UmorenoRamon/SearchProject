@@ -10,7 +10,8 @@ public sealed class ListingSearchService
         string? source = null,
         string? city = null,
         string? status = null,
-        string? q = null)
+        string? q = null,
+        decimal? minPrice = null)
     {
         IEnumerable<Listing> results = listings;
 
@@ -48,6 +49,11 @@ public sealed class ListingSearchService
                 x.State.Contains(q, StringComparison.OrdinalIgnoreCase) ||
                 x.Zip.Contains(q, StringComparison.OrdinalIgnoreCase) ||
                 x.Description.Contains(q, StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (minPrice.HasValue)
+        {
+            results = results.Where(x => x.Price >= minPrice.Value);
         }
 
         return results.ToList();

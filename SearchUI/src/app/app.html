@@ -10,7 +10,24 @@
   } @else if (error()) {
     <p class="error">{{ error() }}</p>
   } @else {
-    <p class="count">{{ listings().length }} listings found</p>
+    <div class="filters-container">
+      <div class="filter-group">
+        <label for="minPrice">Filter by Min Price</label>
+        <input
+          id="minPrice"
+          type="number"
+          min="0"
+          placeholder="Min Price"
+          [value]="minPrice() ?? ''"
+          (input)="updateMinPrice($any($event.target).value)"
+        />
+        @if (minPrice() !== null) {
+          <button type="button" class="clear-btn" (click)="clearMinPrice()">Clear</button>
+        }
+      </div>
+    </div>
+
+    <p class="count">{{ filteredListings().length }} listings found</p>
 
     <div class="table-wrapper">
       <table>
@@ -29,7 +46,7 @@
         </thead>
 
         <tbody>
-          @for (listing of listings(); track listing.source + '-' + listing.id) {
+          @for (listing of filteredListings(); track listing.source + '-' + listing.id) {
             <tr>
               <td>
                 <strong>{{ listing.address }}</strong>
