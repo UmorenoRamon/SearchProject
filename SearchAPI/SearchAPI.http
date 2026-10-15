@@ -9,3 +9,33 @@ GET {{SearchAPI_HostAddress}}/api/listings?minPrice=600000
 Accept: application/json
 
 ###
+
+GET {{SearchAPI_HostAddress}}/api/listings?maxPrice=700000
+Accept: application/json
+
+###
+
+GET {{SearchAPI_HostAddress}}/api/listings?minBedrooms=3
+Accept: application/json
+
+###
+
+GET {{SearchAPI_HostAddress}}/api/listings?minPrice=500000&maxPrice=700000&minBedrooms=3
+Accept: application/json
+
+###
+
+GET {{SearchAPI_HostAddress}}/api/listings?city=Boston
+Accept: application/json
+
+###
+
+GET {{SearchAPI_HostAddress}}/api/listings?keyword=kitchen
+Accept: application/json
+
+###
+
+GET {{SearchAPI_HostAddress}}/api/listings?city=Boston&keyword=kitchen
+Accept: application/json
+
+###

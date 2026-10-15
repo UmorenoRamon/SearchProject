@@ -60,7 +60,7 @@ await using (var stream = File.OpenRead(jsonPath))
 }
 
 // GET /api/listings
-// Optional filters: source, city, status, q, minPrice
+// Optional filters: source, city, status, q, minPrice, maxPrice, minBedrooms, description, keyword
 
 app.MapGet("/api/listings", async (
     ListingsDbContext db,
@@ -69,7 +69,11 @@ app.MapGet("/api/listings", async (
     string? city,
     string? status,
     string? q,
-    decimal? minPrice) =>
+    decimal? minPrice,
+    decimal? maxPrice,
+    int? minBedrooms,
+    string? description,
+    string? keyword) =>
 {
     var listings = await db.Listings
         .AsNoTracking()
@@ -81,7 +85,10 @@ app.MapGet("/api/listings", async (
         city,
         status,
         q,
-        minPrice);
+        minPrice,
+        maxPrice,
+        minBedrooms,
+        description ?? keyword);
 
     return Results.Ok(results);
 });

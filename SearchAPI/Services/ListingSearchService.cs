@@ -11,7 +11,10 @@ public sealed class ListingSearchService
         string? city = null,
         string? status = null,
         string? q = null,
-        decimal? minPrice = null)
+        decimal? minPrice = null,
+        decimal? maxPrice = null,
+        int? minBedrooms = null,
+        string? description = null)
     {
         IEnumerable<Listing> results = listings;
 
@@ -54,6 +57,24 @@ public sealed class ListingSearchService
         if (minPrice.HasValue)
         {
             results = results.Where(x => x.Price >= minPrice.Value);
+        }
+
+        if (maxPrice.HasValue)
+        {
+            results = results.Where(x => x.Price <= maxPrice.Value);
+        }
+
+        if (minBedrooms.HasValue)
+        {
+            results = results.Where(x => x.Bedrooms >= minBedrooms.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(description))
+        {
+            results = results.Where(x =>
+                x.Description.Contains(
+                    description,
+                    StringComparison.OrdinalIgnoreCase));
         }
 
         return results.ToList();

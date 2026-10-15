@@ -23,6 +23,7 @@ header p,
 .filters-container {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 16px;
   margin-bottom: 20px;
   padding: 14px 18px;
