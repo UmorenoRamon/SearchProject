@@ -5,6 +5,7 @@ import { RouterOutlet } from '@angular/router';
 
 import { Listing } from './models/listing';
 import { ListingsService } from './services/listings.service';
+import { calculateListingScores } from './calculation';
 
 @Component({
   selector: 'app-root',
@@ -24,6 +25,33 @@ export class App implements OnInit {
   protected readonly minBedrooms = signal<number | null>(null);
   protected readonly city = signal<string>('');
   protected readonly keyword = signal<string>('');
+  protected readonly targetBudget = signal<number | null>(null);
+  protected readonly pageSize = signal<number>(10);
+  protected readonly currentPage = signal<number>(1);
+  protected readonly pageSizeOptions = [5, 10, 50];
+
+  protected readonly totalPages = computed(() => {
+    const total = this.filteredListings().length;
+    const size = this.pageSize();
+    return Math.max(1, Math.ceil(total / size));
+  });
+
+  protected readonly paginatedListings = computed(() => {
+    const filtered = this.filteredListings();
+    const page = this.currentPage();
+    const size = this.pageSize();
+    const start = (page - 1) * size;
+    return filtered.slice(start, start + size);
+  });
+
+  protected readonly listingScores = computed(() => {
+    const budget = this.targetBudget();
+    const currentListings = this.filteredListings();
+    if (budget === null || budget === undefined || currentListings.length === 0) {
+      return new Map<string, number>();
+    }
+    return calculateListingScores(currentListings, budget);
+  });
 
   protected readonly filteredListings = computed(() => {
     const minP = this.minPrice();
@@ -56,19 +84,34 @@ export class App implements OnInit {
   });
 
   ngOnInit(): void {
-    this.listingsService.getListings().subscribe({
-      next: (data) => {
-        this.listings.set(data);
-        this.loading.set(false);
-      },
-      error: (err) => {
-        console.error('Failed to load listings:', err);
-        this.error.set(
-          'Unable to load listings. Check that the API is running.'
-        );
-        this.loading.set(false);
-      },
-    });
+    this.loadListings();
+  }
+
+  protected loadListings(): void {
+    this.loading.set(true);
+    this.listingsService
+      .getListings(
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        this.currentPage(),
+        this.pageSize(),
+      )
+      .subscribe({
+        next: (data) => {
+          this.listings.set(data);
+          this.loading.set(false);
+        },
+        error: (err) => {
+          console.error('Failed to load listings:', err);
+          this.error.set(
+            'Unable to load listings. Check that the API is running.'
+          );
+          this.loading.set(false);
+        },
+      });
   }
 
   protected updateMinPrice(value: string): void {
@@ -127,5 +170,47 @@ export class App implements OnInit {
 
   protected clearKeyword(): void {
     this.keyword.set('');
+  }
+
+  protected updateTargetBudget(value: string): void {
+    const trimmed = value.trim();
+    if (trimmed === '') {
+      this.targetBudget.set(null);
+      return;
+    }
+    const parsed = Number(trimmed);
+    this.targetBudget.set(!isNaN(parsed) && parsed >= 0 ? parsed : null);
+  }
+
+  protected clearTargetBudget(): void {
+    this.targetBudget.set(null);
+  }
+
+  protected getScore(listing: Listing): number | null {
+    if (this.targetBudget() === null) return null;
+    const key = `${listing.source}-${listing.id}`;
+    return this.listingScores().get(key) ?? null;
+  }
+
+  protected getScoreDisplay(listing: Listing): string {
+    const score = this.getScore(listing);
+    if (score === null) return '-';
+    return `${Math.round(score)}%`;
+  }
+
+  protected goToPage(page: number): void {
+    if (page >= 1 && page <= this.totalPages() && page !== this.currentPage()) {
+      this.currentPage.set(page);
+      this.loadListings();
+    }
+  }
+
+  protected updatePageSize(value: string | number): void {
+    const size = Number(value);
+    if (!isNaN(size) && size > 0 && size !== this.pageSize()) {
+      this.pageSize.set(size);
+      this.currentPage.set(1);
+      this.loadListings();
+    }
   }
 }

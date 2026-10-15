@@ -17,6 +17,8 @@ export class ListingsService {
     minBedrooms?: number,
     city?: string,
     keyword?: string,
+    page?: number,
+    pageSize?: number,
   ): Observable<Listing[]> {
     let params = new HttpParams();
     if (minPrice !== undefined && minPrice !== null) {
@@ -33,6 +35,12 @@ export class ListingsService {
     }
     if (keyword !== undefined && keyword !== null && keyword.trim() !== '') {
       params = params.set('keyword', keyword.trim());
+    }
+    if (page !== undefined && page !== null) {
+      params = params.set('page', page.toString());
+    }
+    if (pageSize !== undefined && pageSize !== null) {
+      params = params.set('pageSize', pageSize.toString());
     }
     if (params.keys().length > 0) {
       return this.http.get<Listing[]>(this.apiUrl, { params });

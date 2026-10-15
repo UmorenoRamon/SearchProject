@@ -245,4 +245,48 @@ public class ListingSearchServiceTests
         Assert.Equal("1001", listing.Id);
         Assert.Equal("MLS_B", listing.Source);
     }
+
+    [Fact]
+    public void Search_WithPagination_ReturnsFirstPage()
+    {
+        var results = _service.Search(
+            CreateListings(), page: 1, pageSize: 2);
+
+        Assert.Equal(2, results.Count);
+        Assert.Equal("1001", results[0].Id);
+        Assert.Equal("MLS_A", results[0].Source);
+        Assert.Equal("1001", results[1].Id);
+        Assert.Equal("MLS_B", results[1].Source);
+    }
+
+    [Fact]
+    public void Search_WithPagination_ReturnsSecondPage()
+    {
+        var results = _service.Search(
+            CreateListings(), page: 2, pageSize: 2);
+
+        var listing = Assert.Single(results);
+        Assert.Equal("2001", listing.Id);
+        Assert.Equal("MLS_A", listing.Source);
+    }
+
+    [Fact]
+    public void Search_WithPagination_ReturnsEmptyWhenPageExceedsResults()
+    {
+        var results = _service.Search(
+            CreateListings(), page: 3, pageSize: 2);
+
+        Assert.Empty(results);
+    }
+
+    [Fact]
+    public void Search_WithPageSizeOnly_DefaultsToPageOne()
+    {
+        var results = _service.Search(
+            CreateListings(), pageSize: 1);
+
+        var listing = Assert.Single(results);
+        Assert.Equal("1001", listing.Id);
+        Assert.Equal("MLS_A", listing.Source);
+    }
 }

@@ -12,13 +12,15 @@ builder.Services.AddCors(options =>
     options.AddDefaultPolicy(policy =>
         policy.WithOrigins("http://localhost:4200")
               .AllowAnyHeader()
-              .AllowAnyMethod());
+              .AllowAnyMethod()
+              .WithExposedHeaders("X-Total-Count"));
 });
 
 builder.Services.AddDbContext<ListingsDbContext>(options =>
     options.UseInMemoryDatabase("ListingsDatabase"));
 
 builder.Services.AddScoped<ListingSearchService>();
+builder.Services.AddScoped<Calculation>();
 
 var app = builder.Build();
 
@@ -60,7 +62,7 @@ await using (var stream = File.OpenRead(jsonPath))
 }
 
 // GET /api/listings
-// Optional filters: source, city, status, q, minPrice, maxPrice, minBedrooms, description, keyword
+// Optional filters: source, city, status, q, minPrice, maxPrice, minBedrooms, description, keyword, page, pageSize
 
 app.MapGet("/api/listings", async (
     ListingsDbContext db,
@@ -73,11 +75,27 @@ app.MapGet("/api/listings", async (
     decimal? maxPrice,
     int? minBedrooms,
     string? description,
-    string? keyword) =>
+    string? keyword,
+    int? page,
+    int? pageSize,
+    HttpResponse response) =>
 {
     var listings = await db.Listings
         .AsNoTracking()
         .ToListAsync();
+
+    var allFiltered = searchService.Search(
+        listings,
+        source,
+        city,
+        status,
+        q,
+        minPrice,
+        maxPrice,
+        minBedrooms,
+        description ?? keyword);
+
+    response.Headers.Append("X-Total-Count", allFiltered.Count.ToString());
 
     var results = searchService.Search(
         listings,
@@ -88,7 +106,9 @@ app.MapGet("/api/listings", async (
         minPrice,
         maxPrice,
         minBedrooms,
-        description ?? keyword);
+        description ?? keyword,
+        page,
+        pageSize);
 
     return Results.Ok(results);
 });

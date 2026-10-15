@@ -14,7 +14,9 @@ public sealed class ListingSearchService
         decimal? minPrice = null,
         decimal? maxPrice = null,
         int? minBedrooms = null,
-        string? description = null)
+        string? description = null,
+        int? page = null,
+        int? pageSize = null)
     {
         IEnumerable<Listing> results = listings;
 
@@ -75,6 +77,12 @@ public sealed class ListingSearchService
                 x.Description.Contains(
                     description,
                     StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (pageSize.HasValue && pageSize.Value > 0)
+        {
+            int pageNumber = page.HasValue && page.Value > 0 ? page.Value : 1;
+            results = results.Skip((pageNumber - 1) * pageSize.Value).Take(pageSize.Value);
         }
 
         return results.ToList();

@@ -83,6 +83,21 @@
           <button type="button" class="clear-btn" (click)="clearKeyword()">Clear</button>
         }
       </div>
+
+      <div class="filter-group">
+        <label for="targetBudget">Target Budget</label>
+        <input
+          id="targetBudget"
+          type="number"
+          min="0"
+          placeholder="Target Budget"
+          [value]="targetBudget() ?? ''"
+          (input)="updateTargetBudget($any($event.target).value)"
+        />
+        @if (targetBudget() !== null) {
+          <button type="button" class="clear-btn" (click)="clearTargetBudget()">Clear</button>
+        }
+      </div>
     </div>
 
     <p class="count">{{ filteredListings().length }} listings found</p>
@@ -100,11 +115,14 @@
             <th>Status</th>
             <th>Listed</th>
             <th>Source</th>
+            @if (targetBudget() !== null) {
+              <th>Score</th>
+            }
           </tr>
         </thead>
 
         <tbody>
-          @for (listing of filteredListings(); track listing.source + '-' + listing.id) {
+          @for (listing of paginatedListings(); track listing.source + '-' + listing.id) {
             <tr>
               <td>
                 <strong>{{ listing.address }}</strong>
@@ -122,14 +140,56 @@
               </td>
               <td>{{ listing.listedDate | date:'mediumDate':'UTC' }}</td>
               <td>{{ listing.source }}</td>
+              @if (targetBudget() !== null) {
+                <td>
+                  <span class="score">{{ getScoreDisplay(listing) }}</span>
+                </td>
+              }
             </tr>
           } @empty {
             <tr>
-              <td colspan="9">No listings found.</td>
+              <td [attr.colspan]="targetBudget() !== null ? 10 : 9">No listings found.</td>
             </tr>
           }
         </tbody>
       </table>
+    </div>
+
+    <div class="pagination-bar">
+      <div class="page-size-group">
+        <label for="pageSize">Items per page:</label>
+        <select
+          id="pageSize"
+          [value]="pageSize()"
+          (change)="updatePageSize($any($event.target).value)"
+        >
+          @for (option of pageSizeOptions; track option) {
+            <option [value]="option">{{ option }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="pagination-nav">
+        <button
+          type="button"
+          class="page-btn prev-btn"
+          [disabled]="currentPage() <= 1"
+          (click)="goToPage(currentPage() - 1)"
+        >
+          Previous
+        </button>
+        <span class="page-info">
+          Page {{ currentPage() }} of {{ totalPages() }}
+        </span>
+        <button
+          type="button"
+          class="page-btn next-btn"
+          [disabled]="currentPage() >= totalPages()"
+          (click)="goToPage(currentPage() + 1)"
+        >
+          Next
+        </button>
+      </div>
     </div>
   }
 </main>

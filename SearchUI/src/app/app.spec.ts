@@ -626,4 +626,167 @@ describe('App', () => {
     expect(compiled.textContent).not.toContain('123 Main Street');
     expect(compiled.textContent).not.toContain('10 Oak Avenue');
   });
+
+  it('renders the targetBudget input control', () => {
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const label = compiled.querySelector('label[for="targetBudget"]');
+    const input = compiled.querySelector('#targetBudget') as HTMLInputElement;
+
+    expect(label?.textContent).toContain('Target Budget');
+    expect(input).toBeTruthy();
+  });
+
+  it('does not display Score column when targetBudget is empty', () => {
+    mockListingsService.getListings.mockReturnValue(
+      of([sampleListing, sampleListing2]),
+    );
+
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const thead = compiled.querySelector('thead');
+    expect(thead?.textContent).not.toContain('Score');
+    expect(compiled.querySelector('.score')).toBeNull();
+  });
+
+  it('displays Score column and calculated scores when targetBudget is entered', () => {
+    mockListingsService.getListings.mockReturnValue(
+      of([sampleListing, sampleListing2, sampleListing3]),
+    );
+
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const input = compiled.querySelector('#targetBudget') as HTMLInputElement;
+
+    input.value = '650000';
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    const thead = compiled.querySelector('thead');
+    expect(thead?.textContent).toContain('Score');
+
+    const scoreElements = compiled.querySelectorAll('.score');
+    expect(scoreElements.length).toBe(3);
+    // Listing matching targetBudget (650,000) should have high score
+    expect(scoreElements[0].textContent).toContain('%');
+  });
+
+  it('clears targetBudget and hides Score column when clear button is clicked', () => {
+    mockListingsService.getListings.mockReturnValue(
+      of([sampleListing, sampleListing2]),
+    );
+
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const input = compiled.querySelector('#targetBudget') as HTMLInputElement;
+
+    input.value = '500000';
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    expect(compiled.querySelector('thead')?.textContent).toContain('Score');
+
+    const clearButton = input.parentElement?.querySelector('.clear-btn') as HTMLButtonElement;
+    expect(clearButton).toBeTruthy();
+    clearButton.click();
+    fixture.detectChanges();
+
+    expect(compiled.querySelector('thead')?.textContent).not.toContain('Score');
+    expect(input.value).toBe('');
+  });
+
+  it('renders pagination controls and items per page dropdown with 5, 10, 50 options', () => {
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const select = compiled.querySelector('#pageSize') as HTMLSelectElement;
+    expect(select).toBeTruthy();
+
+    const options = Array.from(select.options).map((o) => Number(o.value));
+    expect(options).toEqual([5, 10, 50]);
+
+    const prevButton = compiled.querySelector('.prev-btn') as HTMLButtonElement;
+    const nextButton = compiled.querySelector('.next-btn') as HTMLButtonElement;
+    expect(prevButton).toBeTruthy();
+    expect(nextButton).toBeTruthy();
+    expect(prevButton.disabled).toBe(true);
+  });
+
+  it('sends page and pageSize parameters when requesting listings', () => {
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    expect(mockListingsService.getListings).toHaveBeenCalledWith(
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      1,
+      10,
+    );
+  });
+
+  it('updates page size and requests listings with new pageSize', () => {
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    const select = fixture.nativeElement.querySelector('#pageSize') as HTMLSelectElement;
+    select.value = '5';
+    select.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    expect(mockListingsService.getListings).toHaveBeenCalledWith(
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      1,
+      5,
+    );
+  });
+
+  it('navigates to next page and requests listings with new page', () => {
+    // Provide 6 listings so with pageSize 5 there are 2 pages
+    const sixListings: Listing[] = Array.from({ length: 6 }, (_, i) => ({
+      ...sampleListing,
+      id: `id-${i}`,
+      address: `Address ${i}`,
+    }));
+    mockListingsService.getListings.mockReturnValue(of(sixListings));
+
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    const select = fixture.nativeElement.querySelector('#pageSize') as HTMLSelectElement;
+    select.value = '5';
+    select.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    const nextBtn = fixture.nativeElement.querySelector('.next-btn') as HTMLButtonElement;
+    expect(nextBtn.disabled).toBe(false);
+
+    nextBtn.click();
+    fixture.detectChanges();
+
+    expect(mockListingsService.getListings).toHaveBeenCalledWith(
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      2,
+      5,
+    );
+  });
 });

@@ -39,3 +39,13 @@ GET {{SearchAPI_HostAddress}}/api/listings?city=Boston&keyword=kitchen
 Accept: application/json
 
 ###
+
+GET {{SearchAPI_HostAddress}}/api/listings?page=1&pageSize=5
+Accept: application/json
+
+###
+
+GET {{SearchAPI_HostAddress}}/api/listings?page=2&pageSize=10
+Accept: application/json
+
+###
