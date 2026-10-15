@@ -1,4 +1,6 @@
 
+using System.ComponentModel.DataAnnotations.Schema;
+
 namespace SearchAPI.Models;
 
 public sealed class Listing
@@ -22,4 +24,8 @@ public sealed class Listing
     public DateOnly ListedDate { get; set; }
     public required string Status { get; set; }
     public required string Description { get; set; }
+
+    [NotMapped]
+    public double? Score { get; set; }
 }
+

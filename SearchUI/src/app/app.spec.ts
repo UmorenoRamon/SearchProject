@@ -655,7 +655,11 @@ describe('App', () => {
 
   it('displays Score column and calculated scores when targetBudget is entered', () => {
     mockListingsService.getListings.mockReturnValue(
-      of([sampleListing, sampleListing2, sampleListing3]),
+      of([
+        { ...sampleListing, score: 95 },
+        { ...sampleListing2, score: 40 },
+        { ...sampleListing3, score: 20 },
+      ]),
     );
 
     const fixture = TestBed.createComponent(App);
@@ -668,13 +672,25 @@ describe('App', () => {
     input.dispatchEvent(new Event('input'));
     fixture.detectChanges();
 
+    expect(mockListingsService.getListings).toHaveBeenCalledWith(
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      1,
+      10,
+      650000,
+    );
+
     const thead = compiled.querySelector('thead');
     expect(thead?.textContent).toContain('Score');
 
     const scoreElements = compiled.querySelectorAll('.score');
     expect(scoreElements.length).toBe(3);
-    // Listing matching targetBudget (650,000) should have high score
-    expect(scoreElements[0].textContent).toContain('%');
+    expect(scoreElements[0].textContent).toContain('95%');
+    expect(scoreElements[1].textContent).toContain('40%');
+    expect(scoreElements[2].textContent).toContain('20%');
   });
 
   it('clears targetBudget and hides Score column when clear button is clicked', () => {
@@ -698,6 +714,17 @@ describe('App', () => {
     expect(clearButton).toBeTruthy();
     clearButton.click();
     fixture.detectChanges();
+
+    expect(mockListingsService.getListings).toHaveBeenLastCalledWith(
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      1,
+      10,
+      undefined,
+    );
 
     expect(compiled.querySelector('thead')?.textContent).not.toContain('Score');
     expect(input.value).toBe('');
@@ -733,6 +760,7 @@ describe('App', () => {
       undefined,
       1,
       10,
+      undefined,
     );
   });
 
@@ -753,6 +781,7 @@ describe('App', () => {
       undefined,
       1,
       5,
+      undefined,
     );
   });
 
@@ -787,6 +816,165 @@ describe('App', () => {
       undefined,
       2,
       5,
+      undefined,
     );
+  });
+
+  it('calls API with updated minPrice when minPrice input changes', () => {
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    const input = fixture.nativeElement.querySelector('#minPrice') as HTMLInputElement;
+    input.value = '400000';
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    expect(mockListingsService.getListings).toHaveBeenLastCalledWith(
+      400000,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      1,
+      10,
+      undefined,
+    );
+  });
+
+  it('calls API with updated maxPrice when maxPrice input changes', () => {
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    const input = fixture.nativeElement.querySelector('#maxPrice') as HTMLInputElement;
+    input.value = '800000';
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    expect(mockListingsService.getListings).toHaveBeenLastCalledWith(
+      undefined,
+      800000,
+      undefined,
+      undefined,
+      undefined,
+      1,
+      10,
+      undefined,
+    );
+  });
+
+  it('calls API with updated minBedrooms when minBedrooms input changes', () => {
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    const input = fixture.nativeElement.querySelector('#minBedrooms') as HTMLInputElement;
+    input.value = '3';
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    expect(mockListingsService.getListings).toHaveBeenLastCalledWith(
+      undefined,
+      undefined,
+      3,
+      undefined,
+      undefined,
+      1,
+      10,
+      undefined,
+    );
+  });
+
+  it('calls API with updated city when city input changes', () => {
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    const input = fixture.nativeElement.querySelector('#city') as HTMLInputElement;
+    input.value = 'Boston';
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    expect(mockListingsService.getListings).toHaveBeenLastCalledWith(
+      undefined,
+      undefined,
+      undefined,
+      'Boston',
+      undefined,
+      1,
+      10,
+      undefined,
+    );
+  });
+
+  it('calls API with updated keyword when keyword input changes', () => {
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    const input = fixture.nativeElement.querySelector('#keyword') as HTMLInputElement;
+    input.value = 'garden';
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    expect(mockListingsService.getListings).toHaveBeenLastCalledWith(
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      'garden',
+      1,
+      10,
+      undefined,
+    );
+  });
+
+  it('keeps focus on targetBudget when typing multiple digits and API is called', async () => {
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    const input = fixture.nativeElement.querySelector('#targetBudget') as HTMLInputElement;
+    document.body.appendChild(fixture.nativeElement);
+    input.focus();
+    expect(document.activeElement).toBe(input);
+
+    input.value = '5';
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    expect(document.activeElement).toBe(input);
+
+    input.value = '50';
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    expect(document.activeElement).toBe(input);
+    expect(input.value).toBe('50');
+
+    document.body.removeChild(fixture.nativeElement);
+  });
+
+  it('keeps focus on filter inputs when typing and API is called', async () => {
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    const input = fixture.nativeElement.querySelector('#city') as HTMLInputElement;
+    document.body.appendChild(fixture.nativeElement);
+    input.focus();
+    expect(document.activeElement).toBe(input);
+
+    input.value = 'B';
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    expect(document.activeElement).toBe(input);
+
+    input.value = 'Bo';
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    expect(document.activeElement).toBe(input);
+
+    document.body.removeChild(fixture.nativeElement);
   });
 });

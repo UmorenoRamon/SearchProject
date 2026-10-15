@@ -5,101 +5,101 @@
     <p>Browse properties from multiple listing sources.</p>
   </header>
 
+  <div class="filters-container">
+    <div class="filter-group">
+      <label for="minPrice">Filter by Min Price</label>
+      <input
+        id="minPrice"
+        type="number"
+        min="0"
+        placeholder="Min Price"
+        [value]="minPrice() ?? ''"
+        (input)="updateMinPrice($any($event.target).value)"
+      />
+      @if (minPrice() !== null) {
+        <button type="button" class="clear-btn" (click)="clearMinPrice()">Clear</button>
+      }
+    </div>
+
+    <div class="filter-group">
+      <label for="maxPrice">Filter by Max Price</label>
+      <input
+        id="maxPrice"
+        type="number"
+        min="0"
+        placeholder="Max Price"
+        [value]="maxPrice() ?? ''"
+        (input)="updateMaxPrice($any($event.target).value)"
+      />
+      @if (maxPrice() !== null) {
+        <button type="button" class="clear-btn" (click)="clearMaxPrice()">Clear</button>
+      }
+    </div>
+
+    <div class="filter-group">
+      <label for="minBedrooms">Filter by Min Bedrooms</label>
+      <input
+        id="minBedrooms"
+        type="number"
+        min="0"
+        placeholder="Min Bedrooms"
+        [value]="minBedrooms() ?? ''"
+        (input)="updateMinBedrooms($any($event.target).value)"
+      />
+      @if (minBedrooms() !== null) {
+        <button type="button" class="clear-btn" (click)="clearMinBedrooms()">Clear</button>
+      }
+    </div>
+
+    <div class="filter-group">
+      <label for="city">Filter by City</label>
+      <input
+        id="city"
+        type="text"
+        placeholder="City"
+        [value]="city()"
+        (input)="updateCity($any($event.target).value)"
+      />
+      @if (city() !== '') {
+        <button type="button" class="clear-btn" (click)="clearCity()">Clear</button>
+      }
+    </div>
+
+    <div class="filter-group">
+      <label for="keyword">Filter by Keyword</label>
+      <input
+        id="keyword"
+        type="text"
+        placeholder="Keyword"
+        [value]="keyword()"
+        (input)="updateKeyword($any($event.target).value)"
+      />
+      @if (keyword() !== '') {
+        <button type="button" class="clear-btn" (click)="clearKeyword()">Clear</button>
+      }
+    </div>
+
+    <div class="filter-group">
+      <label for="targetBudget">Target Budget</label>
+      <input
+        id="targetBudget"
+        type="number"
+        min="0"
+        placeholder="Target Budget"
+        [value]="targetBudget() ?? ''"
+        (input)="updateTargetBudget($any($event.target).value)"
+      />
+      @if (targetBudget() !== null) {
+        <button type="button" class="clear-btn" (click)="clearTargetBudget()">Clear</button>
+      }
+    </div>
+  </div>
+
   @if (loading()) {
     <p>Loading listings...</p>
   } @else if (error()) {
     <p class="error">{{ error() }}</p>
   } @else {
-    <div class="filters-container">
-      <div class="filter-group">
-        <label for="minPrice">Filter by Min Price</label>
-        <input
-          id="minPrice"
-          type="number"
-          min="0"
-          placeholder="Min Price"
-          [value]="minPrice() ?? ''"
-          (input)="updateMinPrice($any($event.target).value)"
-        />
-        @if (minPrice() !== null) {
-          <button type="button" class="clear-btn" (click)="clearMinPrice()">Clear</button>
-        }
-      </div>
-
-      <div class="filter-group">
-        <label for="maxPrice">Filter by Max Price</label>
-        <input
-          id="maxPrice"
-          type="number"
-          min="0"
-          placeholder="Max Price"
-          [value]="maxPrice() ?? ''"
-          (input)="updateMaxPrice($any($event.target).value)"
-        />
-        @if (maxPrice() !== null) {
-          <button type="button" class="clear-btn" (click)="clearMaxPrice()">Clear</button>
-        }
-      </div>
-
-      <div class="filter-group">
-        <label for="minBedrooms">Filter by Min Bedrooms</label>
-        <input
-          id="minBedrooms"
-          type="number"
-          min="0"
-          placeholder="Min Bedrooms"
-          [value]="minBedrooms() ?? ''"
-          (input)="updateMinBedrooms($any($event.target).value)"
-        />
-        @if (minBedrooms() !== null) {
-          <button type="button" class="clear-btn" (click)="clearMinBedrooms()">Clear</button>
-        }
-      </div>
-
-      <div class="filter-group">
-        <label for="city">Filter by City</label>
-        <input
-          id="city"
-          type="text"
-          placeholder="City"
-          [value]="city()"
-          (input)="updateCity($any($event.target).value)"
-        />
-        @if (city() !== '') {
-          <button type="button" class="clear-btn" (click)="clearCity()">Clear</button>
-        }
-      </div>
-
-      <div class="filter-group">
-        <label for="keyword">Filter by Keyword</label>
-        <input
-          id="keyword"
-          type="text"
-          placeholder="Keyword"
-          [value]="keyword()"
-          (input)="updateKeyword($any($event.target).value)"
-        />
-        @if (keyword() !== '') {
-          <button type="button" class="clear-btn" (click)="clearKeyword()">Clear</button>
-        }
-      </div>
-
-      <div class="filter-group">
-        <label for="targetBudget">Target Budget</label>
-        <input
-          id="targetBudget"
-          type="number"
-          min="0"
-          placeholder="Target Budget"
-          [value]="targetBudget() ?? ''"
-          (input)="updateTargetBudget($any($event.target).value)"
-        />
-        @if (targetBudget() !== null) {
-          <button type="button" class="clear-btn" (click)="clearTargetBudget()">Clear</button>
-        }
-      </div>
-    </div>
-
     <p class="count">{{ filteredListings().length }} listings found</p>
 
     <div class="table-wrapper">

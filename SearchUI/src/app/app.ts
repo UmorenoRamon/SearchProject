@@ -1,11 +1,11 @@
 
-import { Component, OnInit, signal, computed, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, computed, inject } from '@angular/core';
 import { CurrencyPipe, DatePipe, DecimalPipe } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
+import { Subscription } from 'rxjs';
 
 import { Listing } from './models/listing';
 import { ListingsService } from './services/listings.service';
-import { calculateListingScores } from './calculation';
 
 @Component({
   selector: 'app-root',
@@ -13,8 +13,9 @@ import { calculateListingScores } from './calculation';
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
-export class App implements OnInit {
+export class App implements OnInit, OnDestroy {
   private readonly listingsService = inject(ListingsService);
+  private listingsSubscription?: Subscription;
 
   protected readonly title = signal('Real Estate Listings');
   protected readonly listings = signal<Listing[]>([]);
@@ -42,15 +43,6 @@ export class App implements OnInit {
     const size = this.pageSize();
     const start = (page - 1) * size;
     return filtered.slice(start, start + size);
-  });
-
-  protected readonly listingScores = computed(() => {
-    const budget = this.targetBudget();
-    const currentListings = this.filteredListings();
-    if (budget === null || budget === undefined || currentListings.length === 0) {
-      return new Map<string, number>();
-    }
-    return calculateListingScores(currentListings, budget);
   });
 
   protected readonly filteredListings = computed(() => {
@@ -87,22 +79,46 @@ export class App implements OnInit {
     this.loadListings();
   }
 
+  ngOnDestroy(): void {
+    this.listingsSubscription?.unsubscribe();
+  }
+
   protected loadListings(): void {
+    const focusedElement =
+      typeof document !== 'undefined'
+        ? (document.activeElement as HTMLElement | null)
+        : null;
+    const focusedId = focusedElement?.id;
+    let selStart: number | null = null;
+    let selEnd: number | null = null;
+    if (focusedElement instanceof HTMLInputElement) {
+      try {
+        selStart = focusedElement.selectionStart;
+        selEnd = focusedElement.selectionEnd;
+      } catch {
+        // Ignored for input types that do not support selection
+      }
+    }
+
     this.loading.set(true);
-    this.listingsService
+    this.error.set('');
+    this.listingsSubscription?.unsubscribe();
+    this.listingsSubscription = this.listingsService
       .getListings(
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
+        this.minPrice() ?? undefined,
+        this.maxPrice() ?? undefined,
+        this.minBedrooms() ?? undefined,
+        this.city().trim() || undefined,
+        this.keyword().trim() || undefined,
         this.currentPage(),
         this.pageSize(),
+        this.targetBudget() ?? undefined,
       )
       .subscribe({
         next: (data) => {
           this.listings.set(data);
           this.loading.set(false);
+          this.restoreFocus(focusedId, selStart, selEnd);
         },
         error: (err) => {
           console.error('Failed to load listings:', err);
@@ -110,86 +126,189 @@ export class App implements OnInit {
             'Unable to load listings. Check that the API is running.'
           );
           this.loading.set(false);
+          this.restoreFocus(focusedId, selStart, selEnd);
         },
       });
+  }
+
+  private restoreFocus(
+    id?: string,
+    start?: number | null,
+    end?: number | null
+  ): void {
+    if (!id || typeof document === 'undefined') return;
+    queueMicrotask(() => {
+      const target = document.getElementById(id) as HTMLInputElement | null;
+      if (target) {
+        if (
+          document.activeElement !== target &&
+          (document.activeElement === document.body ||
+            document.activeElement === null)
+        ) {
+          target.focus();
+        }
+        if (
+          start !== null &&
+          start !== undefined &&
+          end !== null &&
+          end !== undefined &&
+          (target.type === 'text' || target.type === 'search')
+        ) {
+          try {
+            target.setSelectionRange(start, end);
+          } catch {
+            // Ignore
+          }
+        }
+      }
+    });
   }
 
   protected updateMinPrice(value: string): void {
     const trimmed = value.trim();
     if (trimmed === '') {
-      this.minPrice.set(null);
+      if (this.minPrice() !== null) {
+        this.minPrice.set(null);
+        this.currentPage.set(1);
+        this.loadListings();
+      }
       return;
     }
     const parsed = Number(trimmed);
-    this.minPrice.set(!isNaN(parsed) && parsed >= 0 ? parsed : null);
+    const newMin = !isNaN(parsed) && parsed >= 0 ? parsed : null;
+    if (newMin !== this.minPrice()) {
+      this.minPrice.set(newMin);
+      this.currentPage.set(1);
+      this.loadListings();
+    }
   }
 
   protected clearMinPrice(): void {
-    this.minPrice.set(null);
+    if (this.minPrice() !== null) {
+      this.minPrice.set(null);
+      this.currentPage.set(1);
+      this.loadListings();
+    }
   }
 
   protected updateMaxPrice(value: string): void {
     const trimmed = value.trim();
     if (trimmed === '') {
-      this.maxPrice.set(null);
+      if (this.maxPrice() !== null) {
+        this.maxPrice.set(null);
+        this.currentPage.set(1);
+        this.loadListings();
+      }
       return;
     }
     const parsed = Number(trimmed);
-    this.maxPrice.set(!isNaN(parsed) && parsed >= 0 ? parsed : null);
+    const newMax = !isNaN(parsed) && parsed >= 0 ? parsed : null;
+    if (newMax !== this.maxPrice()) {
+      this.maxPrice.set(newMax);
+      this.currentPage.set(1);
+      this.loadListings();
+    }
   }
 
   protected clearMaxPrice(): void {
-    this.maxPrice.set(null);
+    if (this.maxPrice() !== null) {
+      this.maxPrice.set(null);
+      this.currentPage.set(1);
+      this.loadListings();
+    }
   }
 
   protected updateMinBedrooms(value: string): void {
     const trimmed = value.trim();
     if (trimmed === '') {
-      this.minBedrooms.set(null);
+      if (this.minBedrooms() !== null) {
+        this.minBedrooms.set(null);
+        this.currentPage.set(1);
+        this.loadListings();
+      }
       return;
     }
     const parsed = Number(trimmed);
-    this.minBedrooms.set(!isNaN(parsed) && parsed >= 0 ? parsed : null);
+    const newMin = !isNaN(parsed) && parsed >= 0 ? parsed : null;
+    if (newMin !== this.minBedrooms()) {
+      this.minBedrooms.set(newMin);
+      this.currentPage.set(1);
+      this.loadListings();
+    }
   }
 
   protected clearMinBedrooms(): void {
-    this.minBedrooms.set(null);
+    if (this.minBedrooms() !== null) {
+      this.minBedrooms.set(null);
+      this.currentPage.set(1);
+      this.loadListings();
+    }
   }
 
   protected updateCity(value: string): void {
-    this.city.set(value);
+    if (value !== this.city()) {
+      this.city.set(value);
+      this.currentPage.set(1);
+      this.loadListings();
+    }
   }
 
   protected clearCity(): void {
-    this.city.set('');
+    if (this.city() !== '') {
+      this.city.set('');
+      this.currentPage.set(1);
+      this.loadListings();
+    }
   }
 
   protected updateKeyword(value: string): void {
-    this.keyword.set(value);
+    if (value !== this.keyword()) {
+      this.keyword.set(value);
+      this.currentPage.set(1);
+      this.loadListings();
+    }
   }
 
   protected clearKeyword(): void {
-    this.keyword.set('');
+    if (this.keyword() !== '') {
+      this.keyword.set('');
+      this.currentPage.set(1);
+      this.loadListings();
+    }
   }
 
   protected updateTargetBudget(value: string): void {
     const trimmed = value.trim();
     if (trimmed === '') {
-      this.targetBudget.set(null);
+      if (this.targetBudget() !== null) {
+        this.targetBudget.set(null);
+        this.currentPage.set(1);
+        this.loadListings();
+      }
       return;
     }
     const parsed = Number(trimmed);
-    this.targetBudget.set(!isNaN(parsed) && parsed >= 0 ? parsed : null);
+    const newBudget = !isNaN(parsed) && parsed >= 0 ? parsed : null;
+    if (newBudget !== this.targetBudget()) {
+      this.targetBudget.set(newBudget);
+      this.currentPage.set(1);
+      this.loadListings();
+    }
   }
 
   protected clearTargetBudget(): void {
-    this.targetBudget.set(null);
+    if (this.targetBudget() !== null) {
+      this.targetBudget.set(null);
+      this.currentPage.set(1);
+      this.loadListings();
+    }
   }
 
   protected getScore(listing: Listing): number | null {
-    if (this.targetBudget() === null) return null;
-    const key = `${listing.source}-${listing.id}`;
-    return this.listingScores().get(key) ?? null;
+    if (this.targetBudget() === null || listing.score === null || listing.score === undefined) {
+      return null;
+    }
+    return listing.score;
   }
 
   protected getScoreDisplay(listing: Listing): string {

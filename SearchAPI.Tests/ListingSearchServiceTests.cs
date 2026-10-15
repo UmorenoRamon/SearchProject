@@ -289,4 +289,39 @@ public class ListingSearchServiceTests
         Assert.Equal("1001", listing.Id);
         Assert.Equal("MLS_A", listing.Source);
     }
+
+    [Fact]
+    public void Search_WhenTargetBudgetProvided_CalculatesAndPopulatesScoreOnListings()
+    {
+        var results = _service.Search(
+            CreateListings(), targetBudget: 650000m);
+
+        Assert.Equal(3, results.Count);
+        // All results should have a calculated score
+        Assert.All(results, listing => Assert.NotNull(listing.Score));
+
+        // Listing at 650k exactly matches targetBudget (50 pts price) and is oldest listing (0 pts date) => exactly 50.0
+        var matchingListing = results.First(x => x.Price == 650000m);
+        Assert.Equal(50.0, matchingListing.Score!.Value);
+    }
+
+    [Fact]
+    public void Search_WhenTargetBudgetNotProvided_DoesNotCalculateScoreAndScoreIsNull()
+    {
+        var results = _service.Search(
+            CreateListings(), targetBudget: null);
+
+        Assert.Equal(3, results.Count);
+        Assert.All(results, listing => Assert.Null(listing.Score));
+    }
+
+    [Fact]
+    public void Search_WhenTargetBudgetAndPaginationProvided_PopulatesScoresOnReturnedPage()
+    {
+        var results = _service.Search(
+            CreateListings(), page: 1, pageSize: 2, targetBudget: 650000m);
+
+        Assert.Equal(2, results.Count);
+        Assert.All(results, listing => Assert.NotNull(listing.Score));
+    }
 }

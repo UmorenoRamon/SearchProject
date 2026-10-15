@@ -49,3 +49,13 @@ GET {{SearchAPI_HostAddress}}/api/listings?page=2&pageSize=10
 Accept: application/json
 
 ###
+
+GET {{SearchAPI_HostAddress}}/api/listings?targetBudget=650000
+Accept: application/json
+
+###
+
+GET {{SearchAPI_HostAddress}}/api/listings?targetBudget=650000&page=1&pageSize=5
+Accept: application/json
+
+###

@@ -62,7 +62,7 @@ await using (var stream = File.OpenRead(jsonPath))
 }
 
 // GET /api/listings
-// Optional filters: source, city, status, q, minPrice, maxPrice, minBedrooms, description, keyword, page, pageSize
+// Optional filters: source, city, status, q, minPrice, maxPrice, minBedrooms, description, keyword, targetBudget, page, pageSize
 
 app.MapGet("/api/listings", async (
     ListingsDbContext db,
@@ -76,6 +76,7 @@ app.MapGet("/api/listings", async (
     int? minBedrooms,
     string? description,
     string? keyword,
+    decimal? targetBudget,
     int? page,
     int? pageSize,
     HttpResponse response) =>
@@ -93,7 +94,8 @@ app.MapGet("/api/listings", async (
         minPrice,
         maxPrice,
         minBedrooms,
-        description ?? keyword);
+        description ?? keyword,
+        targetBudget: targetBudget);
 
     response.Headers.Append("X-Total-Count", allFiltered.Count.ToString());
 
@@ -108,7 +110,8 @@ app.MapGet("/api/listings", async (
         minBedrooms,
         description ?? keyword,
         page,
-        pageSize);
+        pageSize,
+        targetBudget);
 
     return Results.Ok(results);
 });

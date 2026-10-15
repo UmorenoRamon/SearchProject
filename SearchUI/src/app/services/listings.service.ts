@@ -19,6 +19,7 @@ export class ListingsService {
     keyword?: string,
     page?: number,
     pageSize?: number,
+    targetBudget?: number,
   ): Observable<Listing[]> {
     let params = new HttpParams();
     if (minPrice !== undefined && minPrice !== null) {
@@ -41,6 +42,9 @@ export class ListingsService {
     }
     if (pageSize !== undefined && pageSize !== null) {
       params = params.set('pageSize', pageSize.toString());
+    }
+    if (targetBudget !== undefined && targetBudget !== null) {
+      params = params.set('targetBudget', targetBudget.toString());
     }
     if (params.keys().length > 0) {
       return this.http.get<Listing[]>(this.apiUrl, { params });

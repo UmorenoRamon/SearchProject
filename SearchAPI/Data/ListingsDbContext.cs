@@ -24,5 +24,7 @@ public sealed class ListingsDbContext(
 
         listing.Property(x => x.Status)
             .IsRequired();
+
+        listing.Ignore(x => x.Score);
     }
 }

@@ -15,4 +15,5 @@ export interface Listing {
   listedDate: string;
   status: 'active' | 'pending' | 'sold';
   description: string;
+  score?: number | null;
 }

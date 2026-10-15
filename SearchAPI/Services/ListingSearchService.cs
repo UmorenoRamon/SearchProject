@@ -3,8 +3,10 @@ using SearchAPI.Models;
 
 namespace SearchAPI.Services;
 
-public sealed class ListingSearchService
+public sealed class ListingSearchService(Calculation? calculation = null)
 {
+    private readonly Calculation _calculation = calculation ?? Calculation.Default;
+
     public List<Listing> Search(
         IEnumerable<Listing> listings,
         string? source = null,
@@ -16,7 +18,8 @@ public sealed class ListingSearchService
         int? minBedrooms = null,
         string? description = null,
         int? page = null,
-        int? pageSize = null)
+        int? pageSize = null,
+        decimal? targetBudget = null)
     {
         IEnumerable<Listing> results = listings;
 
@@ -79,12 +82,33 @@ public sealed class ListingSearchService
                     StringComparison.OrdinalIgnoreCase));
         }
 
+        var filteredList = results.ToList();
+
+        if (targetBudget.HasValue && filteredList.Count > 0)
+        {
+            var scores = _calculation.CalculateScores(filteredList, targetBudget.Value);
+            foreach (var item in filteredList)
+            {
+                if (scores.TryGetValue($"{item.Source}-{item.Id}", out var score))
+                {
+                    item.Score = score;
+                }
+            }
+        }
+        else
+        {
+            foreach (var item in filteredList)
+            {
+                item.Score = null;
+            }
+        }
+
         if (pageSize.HasValue && pageSize.Value > 0)
         {
             int pageNumber = page.HasValue && page.Value > 0 ? page.Value : 1;
-            results = results.Skip((pageNumber - 1) * pageSize.Value).Take(pageSize.Value);
+            return filteredList.Skip((pageNumber - 1) * pageSize.Value).Take(pageSize.Value).ToList();
         }
 
-        return results.ToList();
+        return filteredList;
     }
 }
